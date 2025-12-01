@@ -11,6 +11,59 @@ class Direction(StrEnum):
     left = "L"
     right = "R"
 
+def method_0x434C49434B(
+    input: TextIO,
+    start_val: int,
+    num_vals: int,
+) -> int:
+    """Count the number of times the dial points at or crosses 0."""
+    cur_val: int = start_val
+
+    crossings: int = 0
+    landings: int = 0 if cur_val != 0 else 1
+    for line in input:
+        # Parse the dial rotation operation
+        distance: int = int(line[1:])
+        direction = Direction(line[0])
+
+        # Rotate the dial
+        nominal: int
+        match direction:
+            case Direction.left:
+                nominal = cur_val - distance
+            case Direction.right:
+                nominal = cur_val + distance
+            case _:
+                assert_never(direction)
+        q, r = divmod(nominal, num_vals)
+        pointed: int = abs(q)
+        landed: int = r
+        print(f"{cur_val} {direction!s}{distance} points at {landed}", file=sys.stderr)
+
+        # Lands on 0
+        if landed == 0:
+            print(f"Points at 0", file=sys.stderr)
+            landings += 1
+
+        # Crosses 0
+        if pointed:
+            print(f"Pointed at 0 {pointed}x on this operation", file=sys.stderr)
+            if cur_val != 0 and landed != 0:
+                crossings += pointed
+            else:
+                print("Ignoring 1 crossing", file=sys.stderr)
+                crossings += pointed - 1
+
+        # Commit the landed value
+        cur_val = r
+        assert cur_val >= 0
+        assert cur_val < num_vals
+        print(f"{crossings=}", file=sys.stderr)
+        print(f"{landings=}", file=sys.stderr)
+        print(file=sys.stderr)
+
+    return crossings + landings
+
 
 def count_landings(
     input: TextIO,
@@ -38,11 +91,10 @@ def count_landings(
     return landings
 
 
-def main():
+def main() -> int:
     with sys.stdin as input:
-        password: int = count_landings(
+        password: int = method_0x434C49434B(
             input=input,
-            val=0,
             start_val=50,
             num_vals=100,
         )
